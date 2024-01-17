@@ -71,8 +71,8 @@ void LobbyTest()
 	DWORD prevTime = timeGetTime();
 
 	int loginTime = (rand() % 4) + 1;
-	//int logoutTime = (rand() % 20) + 1;
-	int logoutTime = 9999;
+	int logoutTime = (rand() % 10) + 1;
+	//int logoutTime = 9999;
 
 	int howMany, curClient = 0;
 	Client* pClient;
@@ -81,14 +81,14 @@ void LobbyTest()
 	while (totalAccTime <= 400.0)
 	{
 		if (accTime >= loginTime)
-		//if(vecClient.size() != 2)
+		//if(vecClient.size() != 39)
 		{
 			printf("»ý¼º\n");
 			howMany = (rand() % 10) + 1;
 			if (howMany + vecClient.size() > MAX_CLIENT_SIZE)
 				howMany = MAX_CLIENT_SIZE - vecClient.size();
 
-			//howMany = 2;
+			howMany = 39;
 
 			while (curClient < howMany)
 			{

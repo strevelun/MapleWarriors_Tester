@@ -74,6 +74,7 @@ void Client::LobbyUpdateInfo()
 
 void Client::JustLogin(const wchar_t* _pNickname)
 {
+	m_nickname = _pNickname;
 	ushort count = sizeof(ushort);
 	*(ushort*)(m_buffer + count) = (ushort)eClient::LoginReq;						count += sizeof(ushort);
 	memcpy(m_buffer + count, _pNickname, wcslen(_pNickname) * 2);						count += (ushort)wcslen(_pNickname) * 2;
@@ -86,6 +87,8 @@ void Client::LobbyChat(const wchar_t* _pChat)
 {
 	ushort count = sizeof(ushort);
 	*(ushort*)(m_buffer + count) = (ushort)eClient::LobbyChat;						count += sizeof(ushort);
+	memcpy(m_buffer + count, m_nickname.c_str(), wcslen(m_nickname.c_str()) * 2);						count += (ushort)wcslen(m_nickname.c_str()) * 2;
+	*(wchar_t*)(m_buffer + count) = L'\0';										count += 2;
 	memcpy(m_buffer + count, _pChat, wcslen(_pChat) * 2);						count += (ushort)wcslen(_pChat) * 2;
 	*(wchar_t*)(m_buffer + count) = L'\0';											count += 2;
 	*(ushort*)m_buffer = count;
