@@ -23,6 +23,7 @@ enum class eChoice
 	ChoiceMax
 };
 const char* pServerIP = "192.168.219.107";
+//const char* pServerIP = "220.121.252.109"; // gpm
 // const char * pServerIP = "220.127.242.178";
 const int port = 30001;
 
@@ -71,24 +72,24 @@ void LobbyTest()
 	DWORD prevTime = timeGetTime();
 
 	int loginTime = (rand() % 4) + 1;
-	int logoutTime = (rand() % 10) + 1;
-	//int logoutTime = 9999;
+	//int logoutTime = (rand() % 30) + 1;
+	int logoutTime = 9999;
 
 	int howMany, curClient = 0;
 	Client* pClient;
 	DWORD curTime;
 
-	while (totalAccTime <= 400.0)
+	while (totalAccTime <= 60.0)
 	{
 		if (accTime >= loginTime)
-		//if(vecClient.size() != 39)
+		//if(vecClient.size() != 9)
 		{
-			printf("持失\n");
-			howMany = (rand() % 10) + 1;
-			if (howMany + vecClient.size() > MAX_CLIENT_SIZE)
-				howMany = MAX_CLIENT_SIZE - vecClient.size();
+			howMany = (rand() % 299) + 1;
+			if (howMany + vecClient.size() > MAX_CLIENT_SIZE-1)
+				howMany = MAX_CLIENT_SIZE - vecClient.size()-1;
 
-			howMany = 39;
+			printf("持失 : %d鯵\n", howMany);
+			//howMany = 9;
 
 			while (curClient < howMany)
 			{

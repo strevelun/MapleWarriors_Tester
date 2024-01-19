@@ -20,6 +20,7 @@ bool Client::Update(double _deltaTime)
 	m_accTime += _deltaTime;
 	m_accTimeUpdateInfo += _deltaTime;
 	m_accTimeLobbyChat += _deltaTime;
+	m_accTimeCreateRoom += _deltaTime;
 
 	if (m_accTimeUpdateInfo >= 5.0)
 	{
@@ -31,6 +32,12 @@ bool Client::Update(double _deltaTime)
 	{
 		m_accTimeLobbyChat = 0.0f;
 		LobbyChat(m_arrChat[(rand() % 3)]);
+	}
+
+	if (m_accTimeCreateRoom >= rand() % 10 + 1)
+	{
+		m_accTimeCreateRoom = -999999.0;
+		CreateRoom();
 	}
 	
 	if (m_accTime >= m_logoutTime) return false;
@@ -64,6 +71,7 @@ void Client::LobbyTestInit(int _logoutTime)
 
 void Client::LobbyUpdateInfo()
 {
+	//printf("LobbyUpdateInfo");
 	ushort count = sizeof(ushort);
 	*(ushort*)(m_buffer + count) = (ushort)eClient::LobbyUpdateInfo;						count += sizeof(ushort);
 	*(char*)(m_buffer + count) = 0;							count += sizeof(char);
@@ -85,14 +93,24 @@ void Client::JustLogin(const wchar_t* _pNickname)
 
 void Client::LobbyChat(const wchar_t* _pChat)
 {
+	//printf("LobbyChat");
 	ushort count = sizeof(ushort);
 	*(ushort*)(m_buffer + count) = (ushort)eClient::LobbyChat;						count += sizeof(ushort);
-	memcpy(m_buffer + count, m_nickname.c_str(), wcslen(m_nickname.c_str()) * 2);						count += (ushort)wcslen(m_nickname.c_str()) * 2;
-	*(wchar_t*)(m_buffer + count) = L'\0';										count += 2;
 	memcpy(m_buffer + count, _pChat, wcslen(_pChat) * 2);						count += (ushort)wcslen(_pChat) * 2;
 	*(wchar_t*)(m_buffer + count) = L'\0';											count += 2;
 	*(ushort*)m_buffer = count;
-	send(m_hClientSocket, m_buffer, count, 0);
+	int result = send(m_hClientSocket, m_buffer, count, 0);
+	printf("LobbyChat : %d\n", result);
+}
+
+void Client::CreateRoom()
+{
+	ushort count = sizeof(ushort);
+	*(ushort*)(m_buffer + count) = (ushort)eClient::CreateRoom;						count += sizeof(ushort);
+	memcpy(m_buffer + count, m_nickname.c_str(), wcslen(m_nickname.c_str()) * 2);						count += (ushort)wcslen(m_nickname.c_str()) * 2;
+	*(wchar_t*)(m_buffer + count) = L'\0';											count += 2;
+	*(ushort*)m_buffer = count;
+	send(m_hClientSocket, m_buffer, *(u_short*)m_buffer, 0);
 }
 
 void Client::Logout()

@@ -11,6 +11,7 @@ enum class eServer
 	LobbyChat,
 	LobbyUpdateInfo_UserList,
 	LobbyUpdateInfo_RoomList,
+	CreateRoom,
 };
 
 enum class eClient  
@@ -22,5 +23,6 @@ enum class eClient
 	LobbyChat,
 	LobbyUpdateInfo,
 	UserListGetPageInfo,
-	RoomListGetPageInfo
+	RoomListGetPageInfo,
+	CreateRoom,
 };
