@@ -5,12 +5,20 @@
 #include <array>
 #include <string>
 
+struct WSAOVERLAPPED_EX : WSAOVERLAPPED
+{
+	class Client* m_pClient;
+
+	WSAOVERLAPPED_EX() : WSAOVERLAPPED(), m_pClient(nullptr) {}
+};
+
 class Client
 {
 private:
 	std::wstring m_nickname;
 
 	char					m_buffer[1024];
+	char					m_recvBuffer[1024];
 	SOCKET					m_hClientSocket;
 
 	int						m_logoutTime = 0;
@@ -19,6 +27,10 @@ private:
 	double					m_accTimeCreateRoom = 0.0;
 	double					m_accTime = 0.0;
 
+	WSABUF m_buf;
+	DWORD m_flags = 0;
+	DWORD m_bytesReceived = 0;
+	WSAOVERLAPPED_EX m_overlapped;
 
 	// LobbyChat : 4 + 20 + 2 + 400 + 2 (428)
 	// 97개, 181개, 134개 (194bytes, 362bytes, 268bytes) - 널포함
@@ -41,7 +53,16 @@ public:
 	void JustLogin(const wchar_t* _pNickname);
 	void LobbyChat(const wchar_t* _pChat);
 	void CreateRoom();
-	void Logout();
+	void Logout(); 
+	void CloseSocket();
+
+	void RegisterRecv();
+	
+	static void CALLBACK  CompletionRoutine(DWORD dwErrorCode, DWORD dwNumberOfBytesTransferred, LPWSAOVERLAPPED lpOverlapped, DWORD dwFlags)
+	{
+		WSAOVERLAPPED_EX* overlapped = (WSAOVERLAPPED_EX*)lpOverlapped;
+		overlapped->m_pClient->RegisterRecv();
+	}
 };
 
 

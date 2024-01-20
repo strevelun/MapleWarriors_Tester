@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <vector>
 #include <string>
+#include <process.h>
 
 #pragma comment(lib, "winmm.lib") 
 #pragma comment( lib, "ws2_32.lib")
@@ -67,19 +68,20 @@ void LobbyTest()
 	// 랜덤한 시간에 랜덤한 숫자의 클라이언트 접속 or 로그아웃
 	double totalAccTime = 0.0;
 	std::vector<Client*>			vecClient;
+	std::vector<Client*>			vecClientTrash;
 	int clientID = 0;
 
 	DWORD prevTime = timeGetTime();
 
 	int loginTime = (rand() % 4) + 1;
-	//int logoutTime = (rand() % 30) + 1;
-	int logoutTime = 9999;
+	int logoutTime = (rand() % 30) + 1;
+	//int logoutTime = 9999;
 
 	int howMany, curClient = 0;
 	Client* pClient;
 	DWORD curTime;
 
-	while (totalAccTime <= 60.0)
+	while (totalAccTime <= 3600.0)
 	{
 		if (accTime >= loginTime)
 		//if(vecClient.size() != 9)
@@ -99,6 +101,7 @@ void LobbyTest()
 					delete pClient; 
 					continue;
 				}
+				pClient->RegisterRecv();
 				pClient->LobbyTestInit(logoutTime);
 				pClient->JustLogin((nickname + std::to_wstring(clientID)).c_str());
 				vecClient.push_back(pClient);
@@ -122,22 +125,29 @@ void LobbyTest()
 			if (!(*iter)->Update(deltaTime))
 			{
 				(*iter)->Logout(); // Logout패킷이 도착하기 전에 closesocket해버려서 몇몇 소켓들은 10054 에러
-				delete* iter;
+				vecClientTrash.push_back(*iter);
+				(*iter)->CloseSocket();
 				iter = vecClient.erase(iter);
 			}
 			else
 				++iter;
 		}
+
+		SleepEx(0, TRUE);
 		//printf("경과시간 : %lf\n", totalAccTime);
 	}
-
+	//printf("시간 끝!\n");
+	//Sleep(1000000);
 	std::vector<Client*>::iterator iter = vecClient.begin();
 	std::vector<Client*>::iterator iterEnd = vecClient.end();
 	for (; iter != iterEnd; ++iter)
 	{
-		(*iter)->Logout();
-		delete* iter;
+		(*iter)->Logout();				
+		vecClientTrash.push_back(*iter);
 	}
+
+	for (Client* c : vecClientTrash)
+		delete c;
 	printf("LobbyTest end! \n");
 	system("pause");
 }

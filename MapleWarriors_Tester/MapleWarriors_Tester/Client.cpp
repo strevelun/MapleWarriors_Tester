@@ -8,6 +8,11 @@ typedef unsigned short ushort;
 Client::Client() 
 {
 	m_hClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	m_buf.len = sizeof(m_recvBuffer);
+	m_buf.buf = m_recvBuffer;
+
+	m_overlapped.m_pClient = this;
 }
 
 Client::~Client()
@@ -100,7 +105,7 @@ void Client::LobbyChat(const wchar_t* _pChat)
 	*(wchar_t*)(m_buffer + count) = L'\0';											count += 2;
 	*(ushort*)m_buffer = count;
 	int result = send(m_hClientSocket, m_buffer, count, 0);
-	printf("LobbyChat : %d\n", result);
+	//printf("LobbyChat : %d\n", result);
 }
 
 void Client::CreateRoom()
@@ -119,4 +124,30 @@ void Client::Logout()
 	*(ushort*)(m_buffer + count) = (ushort)eClient::Exit;						count += sizeof(ushort);
 	*(ushort*)m_buffer = count;
 	send(m_hClientSocket, m_buffer, *(u_short*)m_buffer, 0);
+}
+
+void Client::CloseSocket()
+{
+	closesocket(m_hClientSocket);
+	m_hClientSocket = INVALID_SOCKET;
+}
+
+void Client::RegisterRecv()
+{
+	DWORD flags = 0;
+	DWORD bytesReceived = 0;
+
+	m_overlapped = {};
+	m_overlapped.m_pClient = this;
+
+	if (m_hClientSocket == INVALID_SOCKET) return;
+
+	int result = WSARecv(m_hClientSocket, &m_buf, 1, &m_bytesReceived, &m_flags, &m_overlapped, CompletionRoutine);
+	if (result == SOCKET_ERROR)
+	{
+		int error = WSAGetLastError();
+		if (error != WSA_IO_PENDING)
+			printf("WSARecv failed with error: %d\n", error);
+	}
+	//printf("RegisterRecv\n");
 }
