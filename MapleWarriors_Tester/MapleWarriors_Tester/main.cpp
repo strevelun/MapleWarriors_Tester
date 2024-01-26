@@ -9,11 +9,13 @@
 #pragma comment(lib, "winmm.lib") 
 #pragma comment( lib, "ws2_32.lib")
 
-#define MAX_CLIENT_SIZE			300
+#define MAX_CLIENT_SIZE			21
+#define USER_NUM				1		// 테스터 클라이언트는 접속하고 바로 SendChat하기 때문에 오류가 날 수 있으니 반드시 실제 사용자 수 입력
 
 double accTime = 0.0;
 std::wstring nickname = L"Test";
 std::wstring roomName = L"Room";
+HANDLE hCPObject;
 
 void LobbyTest();
 
@@ -23,13 +25,58 @@ enum class eChoice
 	LobbyTest,
 	ChoiceMax
 };
-const char* pServerIP = "192.168.219.107";
+const char* pServerIP = "192.168.219.105";
 //const char* pServerIP = "220.121.252.109"; // gpm
+//const char* pServerIP = "220.121.252.11"; // gpm
 // const char * pServerIP = "220.127.242.178";
 const int port = 30001;
 
+unsigned int __stdcall Worker(void* _pArgs)
+{
+	HANDLE hIOCP = (HANDLE)_pArgs;
+	DWORD			bytesTransferred = 0;
+	WSAOVERLAPPED* pOverlapped = nullptr;
+	Client* pClient = nullptr;
+
+	while (1)
+	{
+		//if(pConn)
+		//	("[%d] GetQUeuedCS 호출 전\n", (int)pConn->GetSocket());
+		bool result = GetQueuedCompletionStatus(hIOCP, &bytesTransferred, (PULONG_PTR)&pClient, (LPOVERLAPPED*)&pOverlapped, INFINITE);
+		if (!result)
+		{
+			printf("false returned : %d\n", WSAGetLastError());
+			continue;
+		}
+
+		printf("%d\n", bytesTransferred);
+
+		if (bytesTransferred == 0)
+		{
+			continue;
+		}
+
+		pClient->RegisterRecv();
+	}
+	return 0;
+}
+
 int main()
 {
+	SYSTEM_INFO		si;
+	GetSystemInfo(&si);
+	hCPObject = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	HANDLE t;
+	for (int i = 0; i < si.dwNumberOfProcessors * 2; ++i)
+	{
+		t = (HANDLE)_beginthreadex(nullptr, 0, &Worker, (void*)hCPObject, 0, nullptr);
+		if (t == 0)
+		{
+			printf("thread 생성 실패\n");
+			return false;
+		}
+	}
+
 	srand((unsigned int)time(nullptr));
 
 	WSADATA  wsaData;
@@ -74,8 +121,8 @@ void LobbyTest()
 	DWORD prevTime = timeGetTime();
 
 	int loginTime = (rand() % 4) + 1;
-	int logoutTime = (rand() % 30) + 1;
-	//int logoutTime = 9999;
+	//int logoutTime = (rand() % 30) + 1;
+	int logoutTime = 9999;
 
 	int howMany, curClient = 0;
 	Client* pClient;
@@ -86,16 +133,17 @@ void LobbyTest()
 		if (accTime >= loginTime)
 		//if(vecClient.size() != 9)
 		{
-			howMany = (rand() % 299) + 1;
-			if (howMany + vecClient.size() > MAX_CLIENT_SIZE-1)
-				howMany = MAX_CLIENT_SIZE - vecClient.size()-1;
+			howMany = (rand() % MAX_CLIENT_SIZE - USER_NUM) + 1;
+			if (vecClient.size() >= MAX_CLIENT_SIZE - USER_NUM) howMany = 0;
+			else if (howMany + vecClient.size() > MAX_CLIENT_SIZE - USER_NUM) // 296+3
+				howMany = MAX_CLIENT_SIZE - USER_NUM - vecClient.size(); // 300-2-296
 
-			printf("생성 : %d개\n", howMany);
+			//printf("생성 : %d개\n", howMany);
 			//howMany = 9;
 
 			while (curClient < howMany)
 			{
-				pClient = new Client;
+				pClient = new Client(hCPObject);
 				if (!pClient->Init(pServerIP, port)) 
 				{
 					delete pClient; 

@@ -5,14 +5,13 @@
 
 typedef unsigned short ushort;
 
-Client::Client() 
+Client::Client(HANDLE _hCPObject) 
 {
 	m_hClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	HANDLE h = CreateIoCompletionPort((HANDLE)m_hClientSocket, _hCPObject, (ULONG_PTR)this, 0);
 
 	m_buf.len = sizeof(m_recvBuffer);
 	m_buf.buf = m_recvBuffer;
-
-	m_overlapped.m_pClient = this;
 }
 
 Client::~Client()
@@ -36,7 +35,8 @@ bool Client::Update(double _deltaTime)
 	if (m_accTimeLobbyChat >= 1.0)
 	{
 		m_accTimeLobbyChat = 0.0f;
-		LobbyChat(m_arrChat[(rand() % 3)]);
+		//LobbyChat(m_arrChat[(rand() % 3)]);
+		LobbyChat(m_arrChat[1]);
 	}
 
 	if (m_accTimeCreateRoom >= rand() % 10 + 1)
@@ -137,12 +137,9 @@ void Client::RegisterRecv()
 	DWORD flags = 0;
 	DWORD bytesReceived = 0;
 
-	m_overlapped = {};
-	m_overlapped.m_pClient = this;
-
 	if (m_hClientSocket == INVALID_SOCKET) return;
 
-	int result = WSARecv(m_hClientSocket, &m_buf, 1, &m_bytesReceived, &m_flags, &m_overlapped, CompletionRoutine);
+	int result = WSARecv(m_hClientSocket, &m_buf, 1, &m_bytesReceived, &m_flags, &m_overlapped, nullptr);
 	if (result == SOCKET_ERROR)
 	{
 		int error = WSAGetLastError();
