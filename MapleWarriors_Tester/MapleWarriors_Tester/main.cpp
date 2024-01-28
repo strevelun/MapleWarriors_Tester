@@ -9,7 +9,7 @@
 #pragma comment(lib, "winmm.lib") 
 #pragma comment( lib, "ws2_32.lib")
 
-#define MAX_CLIENT_SIZE			21
+#define MAX_CLIENT_SIZE			300
 #define USER_NUM				1		// 테스터 클라이언트는 접속하고 바로 SendChat하기 때문에 오류가 날 수 있으니 반드시 실제 사용자 수 입력
 
 double accTime = 0.0;
@@ -25,7 +25,7 @@ enum class eChoice
 	LobbyTest,
 	ChoiceMax
 };
-const char* pServerIP = "192.168.219.105";
+const char* pServerIP = "192.168.219.165";
 //const char* pServerIP = "220.121.252.109"; // gpm
 //const char* pServerIP = "220.121.252.11"; // gpm
 // const char * pServerIP = "220.127.242.178";
@@ -133,7 +133,7 @@ void LobbyTest()
 		if (accTime >= loginTime)
 		//if(vecClient.size() != 9)
 		{
-			howMany = (rand() % MAX_CLIENT_SIZE - USER_NUM) + 1;
+			howMany = (rand() % (MAX_CLIENT_SIZE - USER_NUM)) + 1;
 			if (vecClient.size() >= MAX_CLIENT_SIZE - USER_NUM) howMany = 0;
 			else if (howMany + vecClient.size() > MAX_CLIENT_SIZE - USER_NUM) // 296+3
 				howMany = MAX_CLIENT_SIZE - USER_NUM - vecClient.size(); // 300-2-296
