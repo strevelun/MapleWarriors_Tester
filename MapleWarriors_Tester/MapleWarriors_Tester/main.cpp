@@ -10,7 +10,7 @@
 #pragma comment( lib, "ws2_32.lib")
 
 #define MAX_CLIENT_SIZE			300
-#define USER_NUM				1		// 테스터 클라이언트는 접속하고 바로 SendChat하기 때문에 오류가 날 수 있으니 반드시 실제 사용자 수 입력
+#define USER_NUM				2		// 테스터 클라이언트는 접속하고 바로 SendChat하기 때문에 오류가 날 수 있으니 반드시 실제 사용자 수 입력
 
 double accTime = 0.0;
 std::wstring nickname = L"Test";
@@ -25,7 +25,7 @@ enum class eChoice
 	LobbyTest,
 	ChoiceMax
 };
-const char* pServerIP = "192.168.219.165";
+const char* pServerIP = "192.168.219.173";
 //const char* pServerIP = "220.121.252.109"; // gpm
 //const char* pServerIP = "220.121.252.11"; // gpm
 // const char * pServerIP = "220.127.242.178";

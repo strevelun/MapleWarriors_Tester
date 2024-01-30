@@ -4,6 +4,7 @@
 #include <WS2tcpip.h>
 #include <array>
 #include <string>
+#include <random>
 
 class Client
 {
@@ -17,8 +18,13 @@ private:
 	int						m_logoutTime = 0;
 	double					m_accTimeUpdateInfo = 0.0;
 	double					m_accTimeLobbyChat = 0.0;
+	double					m_accTimeLobbyChatMax = 1.0;
 	double					m_accTimeCreateRoom = 0.0;
 	double					m_accTime = 0.0;
+
+	std::random_device m_rd; 
+	std::mt19937 m_gen; 
+	std::uniform_real_distribution<> m_dis;
 
 	WSABUF m_buf;
 	DWORD m_flags = 0;
@@ -50,6 +56,8 @@ public:
 	void CloseSocket();
 
 	void RegisterRecv();
+
+	double GetRandomNumber() { return m_dis(m_gen); }
 };
 
 

@@ -5,7 +5,8 @@
 
 typedef unsigned short ushort;
 
-Client::Client(HANDLE _hCPObject) 
+Client::Client(HANDLE _hCPObject)  :
+	m_gen(m_rd()), m_dis(0.1, 1.5)
 {
 	m_hClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	HANDLE h = CreateIoCompletionPort((HANDLE)m_hClientSocket, _hCPObject, (ULONG_PTR)this, 0);
@@ -32,10 +33,10 @@ bool Client::Update(double _deltaTime)
 		LobbyUpdateInfo();
 	}
 	
-	if (m_accTimeLobbyChat >= 1.0)
+	if (m_accTimeLobbyChat >= m_accTimeLobbyChatMax)
 	{
 		m_accTimeLobbyChat = 0.0f;
-		//LobbyChat(m_arrChat[(rand() % 3)]);
+		m_accTimeLobbyChatMax = GetRandomNumber();
 		LobbyChat(m_arrChat[1]);
 	}
 
