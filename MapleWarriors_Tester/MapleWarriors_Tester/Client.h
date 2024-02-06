@@ -6,6 +6,15 @@
 #include <string>
 #include <random>
 
+enum class eSceneState
+{
+	None,
+	Login,
+	Lobby,
+	Room,
+	InGame,
+};
+
 class Client
 {
 private:
@@ -18,7 +27,7 @@ private:
 	int						m_logoutTime = 0;
 	double					m_accTimeUpdateInfo = 0.0;
 	double					m_accTimeLobbyChat = 0.0;
-	double					m_accTimeLobbyChatMax = 1.0;
+	double					m_accTimeLobbyChatMax = 2.0;
 	double					m_accTimeCreateRoom = 0.0;
 	double					m_accTime = 0.0;
 
@@ -30,6 +39,8 @@ private:
 	DWORD m_flags = 0;
 	DWORD m_bytesReceived = 0;
 	WSAOVERLAPPED m_overlapped = {};
+
+	eSceneState m_eSceneState = eSceneState::Lobby;
 
 	// LobbyChat : 4 + 20 + 2 + 400 + 2 (428)
 	// 97개, 181개, 134개 (194bytes, 362bytes, 268bytes) - 널포함
@@ -51,6 +62,7 @@ public:
 	void LobbyUpdateInfo();
 	void JustLogin(const wchar_t* _pNickname);
 	void LobbyChat(const wchar_t* _pChat);
+	void RoomChat(const wchar_t* _pChat);
 	void CreateRoom();
 	void Logout(); 
 	void CloseSocket();

@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <process.h>
+#include <conio.h>
 
 #pragma comment(lib, "winmm.lib") 
 #pragma comment( lib, "ws2_32.lib")
@@ -121,8 +122,8 @@ void LobbyTest()
 	DWORD prevTime = timeGetTime();
 
 	int loginTime = (rand() % 4) + 1;
-	//int logoutTime = (rand() % 30) + 1;
-	int logoutTime = 9999;
+	int logoutTime = (rand() % 20) + 1;
+	//int logoutTime = 9999;
 
 	int howMany, curClient = 0;
 	Client* pClient;
@@ -130,6 +131,8 @@ void LobbyTest()
 
 	while (totalAccTime <= 3600.0)
 	{
+		if (_kbhit()) break;
+
 		if (accTime >= loginTime)
 		//if(vecClient.size() != 9)
 		{
@@ -176,12 +179,12 @@ void LobbyTest()
 				vecClientTrash.push_back(*iter);
 				(*iter)->CloseSocket();
 				iter = vecClient.erase(iter);
+				Sleep(1);
 			}
 			else
 				++iter;
 		}
 
-		SleepEx(0, TRUE);
 		//printf("경과시간 : %lf\n", totalAccTime);
 	}
 	//printf("시간 끝!\n");
@@ -192,6 +195,7 @@ void LobbyTest()
 	{
 		(*iter)->Logout();				
 		vecClientTrash.push_back(*iter);
+		Sleep(1);
 	}
 
 	for (Client* c : vecClientTrash)

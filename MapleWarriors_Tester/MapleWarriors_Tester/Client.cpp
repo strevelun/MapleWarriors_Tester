@@ -37,10 +37,14 @@ bool Client::Update(double _deltaTime)
 	{
 		m_accTimeLobbyChat = 0.0f;
 		m_accTimeLobbyChatMax = GetRandomNumber();
-		LobbyChat(m_arrChat[1]);
+		if (m_eSceneState == eSceneState::Lobby)
+			LobbyChat(m_arrChat[1]);
+		else
+			RoomChat(m_arrChat[1]);
 	}
 
-	if (m_accTimeCreateRoom >= rand() % 10 + 1)
+	int r = (rand() % 20) + 3;
+	if (m_accTimeCreateRoom >= r)
 	{
 		m_accTimeCreateRoom = -999999.0;
 		CreateRoom();
@@ -109,6 +113,18 @@ void Client::LobbyChat(const wchar_t* _pChat)
 	//printf("LobbyChat : %d\n", result);
 }
 
+void Client::RoomChat(const wchar_t* _pChat)
+{
+	//printf("LobbyChat");
+	ushort count = sizeof(ushort);
+	*(ushort*)(m_buffer + count) = (ushort)eClient::RoomChat;						count += sizeof(ushort);
+	memcpy(m_buffer + count, _pChat, wcslen(_pChat) * 2);						count += (ushort)wcslen(_pChat) * 2;
+	*(wchar_t*)(m_buffer + count) = L'\0';											count += 2;
+	*(ushort*)m_buffer = count;
+	int result = send(m_hClientSocket, m_buffer, count, 0);
+	//printf("LobbyChat : %d\n", result);
+}
+
 void Client::CreateRoom()
 {
 	ushort count = sizeof(ushort);
@@ -117,6 +133,8 @@ void Client::CreateRoom()
 	*(wchar_t*)(m_buffer + count) = L'\0';											count += 2;
 	*(ushort*)m_buffer = count;
 	send(m_hClientSocket, m_buffer, *(u_short*)m_buffer, 0);
+
+	m_eSceneState = eSceneState::Room;
 }
 
 void Client::Logout()
