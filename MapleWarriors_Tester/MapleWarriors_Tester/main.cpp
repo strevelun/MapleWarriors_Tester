@@ -68,7 +68,7 @@ int main()
 	GetSystemInfo(&si);
 	hCPObject = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	HANDLE t;
-	for (int i = 0; i < si.dwNumberOfProcessors * 2; ++i)
+	for (int i = 0; i < (int)si.dwNumberOfProcessors * 2; ++i)
 	{
 		t = (HANDLE)_beginthreadex(nullptr, 0, &Worker, (void*)hCPObject, 0, nullptr);
 		if (t == 0)
@@ -129,7 +129,7 @@ void LobbyTest()
 	Client* pClient;
 	DWORD curTime;
 
-	while (totalAccTime <= 3600.0)
+	while (totalAccTime <= 5)
 	{
 		if (_kbhit()) break;
 
@@ -195,6 +195,7 @@ void LobbyTest()
 	{
 		//(*iter)->Logout();				
 		vecClientTrash.push_back(*iter);
+		(*iter)->Shutdown();
 		Sleep(1);
 	}
 

@@ -18,8 +18,6 @@ enum class eSceneState
 class Client
 {
 private:
-	CRITICAL_SECTION			m_lock;
-	bool m_bGonnaDie = false;
 	std::wstring m_nickname;
 
 	char					m_buffer[10240];
@@ -71,7 +69,6 @@ public:
 
 	void RegisterRecv();
 
-	bool IsGonnaDie() { return m_bGonnaDie; }
 	double GetRandomNumber() { return m_dis(m_gen); }
 	int GetSocket() const { return (int)m_hClientSocket; }
 };

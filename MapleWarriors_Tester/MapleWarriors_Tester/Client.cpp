@@ -11,15 +11,13 @@ Client::Client(HANDLE _hCPObject)  :
 	m_hClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	HANDLE h = CreateIoCompletionPort((HANDLE)m_hClientSocket, _hCPObject, (ULONG_PTR)this, 0);
 
-	InitializeCriticalSection(&m_lock);
 	m_buf.len = sizeof(m_recvBuffer);
 	m_buf.buf = m_recvBuffer;
 }
 
 Client::~Client()
 {
-	DeleteCriticalSection(&m_lock);
-	if (m_hClientSocket != INVALID_SOCKET) closesocket(m_hClientSocket);
+	//if (m_hClientSocket != INVALID_SOCKET) closesocket(m_hClientSocket);
 }
 
 bool Client::Update(double _deltaTime)
@@ -129,10 +127,9 @@ void Client::RoomChat(const wchar_t* _pChat)
 
 void Client::Shutdown()
 {
-	EnterCriticalSection(&m_lock);
-	shutdown(m_hClientSocket, SD_BOTH);
-	m_bGonnaDie = true;
-	LeaveCriticalSection(&m_lock);
+//	EnterCriticalSection(&m_lock);
+	shutdown(m_hClientSocket, SD_SEND);
+	//LeaveCriticalSection(&m_lock);
 }
 
 void Client::CreateRoom()
@@ -166,13 +163,13 @@ void Client::RegisterRecv()
 	DWORD flags = 0;
 	DWORD bytesReceived = 0;
 
-	EnterCriticalSection(&m_lock);
-	if (IsGonnaDie())
+	//EnterCriticalSection(&m_lock);
+	//if (IsGonnaDie())
 	{
-		LeaveCriticalSection(&m_lock);
-		return;
+		//LeaveCriticalSection(&m_lock);
+	//	return;
 	}
-	LeaveCriticalSection(&m_lock);
+	//LeaveCriticalSection(&m_lock);
 	if (m_hClientSocket == INVALID_SOCKET) return;
 
 	int result = WSARecv(m_hClientSocket, &m_buf, 1, &m_bytesReceived, &m_flags, &m_overlapped, nullptr);
@@ -182,7 +179,7 @@ void Client::RegisterRecv()
 		if (error != WSA_IO_PENDING)
 		{
 			if(error == 10058) // shutdown 후 closesocket하기 전에 소켓버퍼에서 꺼내옴
-			printf("[%d] WSARecv failed with error: %d, %d\n", (int)m_hClientSocket, error, IsGonnaDie());
+			printf("[%d] WSARecv failed with error: %d\n", (int)m_hClientSocket, error);
 		}
 	}
 	//printf("RegisterRecv\n");
