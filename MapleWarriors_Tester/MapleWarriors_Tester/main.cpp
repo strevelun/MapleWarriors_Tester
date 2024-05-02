@@ -11,7 +11,7 @@
 #pragma comment( lib, "ws2_32.lib")
 
 #define MAX_CLIENT_SIZE			300
-#define USER_NUM				2		// 테스터 클라이언트는 접속하고 바로 SendChat하기 때문에 오류가 날 수 있으니 반드시 실제 사용자 수 입력
+#define USER_NUM				3		// 테스터 클라이언트는 접속하고 바로 SendChat하기 때문에 오류가 날 수 있으니 반드시 실제 사용자 수 입력
 
 double accTime = 0.0;
 std::wstring nickname = L"Test";
@@ -26,7 +26,7 @@ enum class eChoice
 	LobbyTest,
 	ChoiceMax
 };
-const char* pServerIP = "192.168.219.173";
+const char* pServerIP = "192.168.219.126";
 //const char* pServerIP = "220.121.252.109"; // gpm
 //const char* pServerIP = "220.121.252.11"; // gpm
 // const char * pServerIP = "220.127.242.178";
@@ -50,10 +50,10 @@ unsigned int __stdcall Worker(void* _pArgs)
 			continue;
 		}
 
-		printf("%d\n", bytesTransferred);
-
 		if (bytesTransferred == 0)
 		{
+			printf("[%d] 소켓 종료\n", pClient->GetSocket());
+			pClient->CloseSocket();
 			continue;
 		}
 
@@ -175,9 +175,9 @@ void LobbyTest()
 		{
 			if (!(*iter)->Update(deltaTime))
 			{
-				(*iter)->Logout(); // Logout패킷이 도착하기 전에 closesocket해버려서 몇몇 소켓들은 10054 에러
+				//(*iter)->Logout(); // Logout패킷이 도착하기 전에 closesocket해버려서 몇몇 소켓들은 10054 에러
 				vecClientTrash.push_back(*iter);
-				(*iter)->CloseSocket();
+				(*iter)->Shutdown();
 				iter = vecClient.erase(iter);
 				Sleep(1);
 			}
@@ -193,10 +193,12 @@ void LobbyTest()
 	std::vector<Client*>::iterator iterEnd = vecClient.end();
 	for (; iter != iterEnd; ++iter)
 	{
-		(*iter)->Logout();				
+		//(*iter)->Logout();				
 		vecClientTrash.push_back(*iter);
 		Sleep(1);
 	}
+
+	Sleep(3000);
 
 	for (Client* c : vecClientTrash)
 		delete c;

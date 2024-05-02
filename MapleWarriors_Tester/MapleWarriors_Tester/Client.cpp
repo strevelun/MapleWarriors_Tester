@@ -6,17 +6,19 @@
 typedef unsigned short ushort;
 
 Client::Client(HANDLE _hCPObject)  :
-	m_gen(m_rd()), m_dis(0.1, 1.5)
+	m_buffer{}, m_recvBuffer{}, m_gen(m_rd()), m_dis(0.1, 1.5)
 {
 	m_hClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	HANDLE h = CreateIoCompletionPort((HANDLE)m_hClientSocket, _hCPObject, (ULONG_PTR)this, 0);
 
+	InitializeCriticalSection(&m_lock);
 	m_buf.len = sizeof(m_recvBuffer);
 	m_buf.buf = m_recvBuffer;
 }
 
 Client::~Client()
 {
+	DeleteCriticalSection(&m_lock);
 	if (m_hClientSocket != INVALID_SOCKET) closesocket(m_hClientSocket);
 }
 
@@ -95,7 +97,7 @@ void Client::JustLogin(const wchar_t* _pNickname)
 	m_nickname = _pNickname;
 	ushort count = sizeof(ushort);
 	*(ushort*)(m_buffer + count) = (ushort)eClient::LoginReq;						count += sizeof(ushort);
-	memcpy(m_buffer + count, _pNickname, wcslen(_pNickname) * 2);						count += (ushort)wcslen(_pNickname) * 2;
+	memcpy(m_buffer + count, _pNickname, wcslen(_pNickname) * 2);					count += (ushort)wcslen(_pNickname) * 2;
 	*(wchar_t*)(m_buffer + count) = L'\0';											count += 2;
 	*(ushort*)m_buffer = count;
 	send(m_hClientSocket, m_buffer, *(u_short*)m_buffer, 0);
@@ -125,6 +127,14 @@ void Client::RoomChat(const wchar_t* _pChat)
 	//printf("LobbyChat : %d\n", result);
 }
 
+void Client::Shutdown()
+{
+	EnterCriticalSection(&m_lock);
+	shutdown(m_hClientSocket, SD_BOTH);
+	m_bGonnaDie = true;
+	LeaveCriticalSection(&m_lock);
+}
+
 void Client::CreateRoom()
 {
 	ushort count = sizeof(ushort);
@@ -136,7 +146,7 @@ void Client::CreateRoom()
 
 	m_eSceneState = eSceneState::Room;
 }
-
+/*
 void Client::Logout()
 {
 	ushort count = sizeof(ushort);
@@ -144,7 +154,7 @@ void Client::Logout()
 	*(ushort*)m_buffer = count;
 	send(m_hClientSocket, m_buffer, *(u_short*)m_buffer, 0);
 }
-
+*/
 void Client::CloseSocket()
 {
 	closesocket(m_hClientSocket);
@@ -156,6 +166,13 @@ void Client::RegisterRecv()
 	DWORD flags = 0;
 	DWORD bytesReceived = 0;
 
+	EnterCriticalSection(&m_lock);
+	if (IsGonnaDie())
+	{
+		LeaveCriticalSection(&m_lock);
+		return;
+	}
+	LeaveCriticalSection(&m_lock);
 	if (m_hClientSocket == INVALID_SOCKET) return;
 
 	int result = WSARecv(m_hClientSocket, &m_buf, 1, &m_bytesReceived, &m_flags, &m_overlapped, nullptr);
@@ -163,7 +180,12 @@ void Client::RegisterRecv()
 	{
 		int error = WSAGetLastError();
 		if (error != WSA_IO_PENDING)
-			printf("WSARecv failed with error: %d\n", error);
+		{
+			if(error == 10058) // shutdown 후 closesocket하기 전에 소켓버퍼에서 꺼내옴
+			printf("[%d] WSARecv failed with error: %d, %d\n", (int)m_hClientSocket, error, IsGonnaDie());
+		}
 	}
 	//printf("RegisterRecv\n");
 }
+
+// 메인쓰레드에서 Shutdown하기 직전 워커쓰레드에서 IsGonnaDie를 지나칠 수 있음
