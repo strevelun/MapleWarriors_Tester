@@ -1,7 +1,7 @@
 #pragma once
 
 
-enum class eServer 
+enum class eServer : unsigned short
 {
 	None = 0,
 	Test,
@@ -42,12 +42,18 @@ enum class eServer
 	RangedAttack,
 	RangedAttackReq,
 	GameOver,
-	Awake,
-	AllMonstersInfo,
+	AllCreaturesInfo,
+	Ready,
+	Start,
+	NextStage,
+	MapClear,
+	StageClear,
+	Annihilated,
+	PlayerHit,
 	Max,
 };
 
-enum class eClient 
+enum class eClient : unsigned short
 {
 	None = 0,
 	Test,

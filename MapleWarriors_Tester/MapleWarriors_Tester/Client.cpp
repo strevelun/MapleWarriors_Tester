@@ -128,7 +128,10 @@ void Client::RoomChat(const wchar_t* _pChat)
 void Client::Shutdown()
 {
 //	EnterCriticalSection(&m_lock);
-	shutdown(m_hClientSocket, SD_SEND);
+	if (shutdown(m_hClientSocket, SD_SEND) == SOCKET_ERROR)
+	{
+		printf("shutdown error : %d\n", WSAGetLastError());
+	}
 	//LeaveCriticalSection(&m_lock);
 }
 

@@ -6,12 +6,16 @@
 #include <string>
 #include <process.h>
 #include <conio.h>
+#include <mutex>
 
 #pragma comment(lib, "winmm.lib") 
 #pragma comment( lib, "ws2_32.lib")
 
 #define MAX_CLIENT_SIZE			300
-#define USER_NUM				3		// 테스터 클라이언트는 접속하고 바로 SendChat하기 때문에 오류가 날 수 있으니 반드시 실제 사용자 수 입력
+#define USER_NUM				4		// 테스터 클라이언트는 접속하고 바로 SendChat하기 때문에 오류가 날 수 있으니 반드시 실제 사용자 수 입력
+
+int totalNum = 0;
+std::mutex mtx;
 
 double accTime = 0.0;
 std::wstring nickname = L"Test";
@@ -26,11 +30,30 @@ enum class eChoice
 	LobbyTest,
 	ChoiceMax
 };
-const char* pServerIP = "192.168.219.126";
+const char* pServerIP = "192.168.219.104";
 //const char* pServerIP = "220.121.252.109"; // gpm
 //const char* pServerIP = "220.121.252.11"; // gpm
 // const char * pServerIP = "220.127.242.178";
 const int port = 30001;
+
+void IncrementTotalNum()
+{
+	std::lock_guard<std::mutex> lock(mtx);
+	++totalNum;
+}
+
+void DecrementTotalNum() 
+{
+	std::lock_guard<std::mutex> lock(mtx);
+	--totalNum;
+	//printf("남은인원 : %d\n", totalNum);
+}
+
+bool IsTotalNumLessThanNum(int _num)
+{
+	std::lock_guard<std::mutex> lock(mtx);
+	return totalNum < _num;
+}
 
 unsigned int __stdcall Worker(void* _pArgs)
 {
@@ -54,6 +77,8 @@ unsigned int __stdcall Worker(void* _pArgs)
 		{
 			printf("[%d] 소켓 종료\n", pClient->GetSocket());
 			pClient->CloseSocket();
+			delete pClient;
+			DecrementTotalNum();
 			continue;
 		}
 
@@ -122,14 +147,14 @@ void LobbyTest()
 	DWORD prevTime = timeGetTime();
 
 	int loginTime = (rand() % 4) + 1;
-	int logoutTime = (rand() % 20) + 1;
+	int logoutTime = (rand() % 30) + 1;
 	//int logoutTime = 9999;
 
 	int howMany, curClient = 0;
 	Client* pClient;
 	DWORD curTime;
 
-	while (totalAccTime <= 5)
+	while (totalAccTime <= 3600.0)
 	{
 		if (_kbhit()) break;
 
@@ -146,6 +171,8 @@ void LobbyTest()
 
 			while (curClient < howMany)
 			{
+				if(!IsTotalNumLessThanNum(MAX_CLIENT_SIZE - USER_NUM)) break;
+
 				pClient = new Client(hCPObject);
 				if (!pClient->Init(pServerIP, port)) 
 				{
@@ -156,6 +183,7 @@ void LobbyTest()
 				pClient->LobbyTestInit(logoutTime);
 				pClient->JustLogin((nickname + std::to_wstring(clientID)).c_str());
 				vecClient.push_back(pClient);
+				IncrementTotalNum();
 				++curClient;
 				++clientID;
 			}
@@ -176,30 +204,32 @@ void LobbyTest()
 			if (!(*iter)->Update(deltaTime))
 			{
 				//(*iter)->Logout(); // Logout패킷이 도착하기 전에 closesocket해버려서 몇몇 소켓들은 10054 에러
-				vecClientTrash.push_back(*iter);
+				//vecClientTrash.push_back(*iter);
 				(*iter)->Shutdown();
+				Sleep(20);
+				vecClientTrash.push_back(*iter);
 				iter = vecClient.erase(iter);
-				Sleep(1);
 			}
 			else
 				++iter;
 		}
 
+		//printf("현재 : %d\n", totalNum);
 		//printf("경과시간 : %lf\n", totalAccTime);
 	}
 	//printf("시간 끝!\n");
 	//Sleep(1000000);
-	std::vector<Client*>::iterator iter = vecClient.begin();
-	std::vector<Client*>::iterator iterEnd = vecClient.end();
-	for (; iter != iterEnd; ++iter)
-	{
+	//std::vector<Client*>::iterator iter = vecClient.begin();
+	//std::vector<Client*>::iterator iterEnd = vecClient.end();
+	//for (; iter != iterEnd; ++iter)
+	//{
 		//(*iter)->Logout();				
-		vecClientTrash.push_back(*iter);
-		(*iter)->Shutdown();
-		Sleep(1);
-	}
+	//	vecClientTrash.push_back(*iter);
+	//	(*iter)->Shutdown();
+	//	Sleep(20);
+	//}
 
-	Sleep(3000);
+	//Sleep(3000);
 
 	for (Client* c : vecClientTrash)
 		delete c;
